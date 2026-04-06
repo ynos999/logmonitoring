@@ -1,0 +1,337 @@
+# =============================================================
+# DEVOPS PROJEKTS — Reāllaika žurnālu monitorings
+# =============================================================
+# Palaišana:  docker compose up -d
+# Apturēšana: docker compose down -v
+# Žurnāli:    docker compose logs -f <servisa_nosaukums>
+# =============================================================
+
+networks:
+  devops-net:
+    driver: bridge   # visi konteineri runā vienā iekšējā tīklā
+
+volumes:
+  es-data:        # Elasticsearch saglabā datus starp restartiem
+  kafka-data:     # Kafka ziņu žurnāls
+  mongo-data:     # MongoDB dokumenti
+  clickhouse-data: # ClickHouse kolonnu dati
+  rabbitmq-data:  # RabbitMQ rindas un ziņas
+  loki-data:      # Loki dati
+
+# =============================================================
+services:
+
+  # -----------------------------------------------------------
+  # 1. FLASK LIETOTNE — datu avots
+  #    Ģenerē žurnālus un notikumus, ko vāc pārējie rīki
+  # -----------------------------------------------------------
+  flask-app:
+    build: ./flask-app
+    container_name: flask-app
+    ports:
+      - "5000:5000"       # http://localhost:5000
+    volumes:
+      - ./flask-app/logs:/app/logs   # žurnālfaili pieejami Fluentd
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/myapp
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      - devops-net
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  # -----------------------------------------------------------
+  # 2. FLUENTD — žurnālu vācējs
+  #    Lasa failus no flask-app/logs un sūta uz Kafka
+  # -----------------------------------------------------------
+  fluentd:
+    build: ./fluentd
+    container_name: fluentd
+    command: ["fluentd", "-c", "/fluentd/etc/fluent.conf"]
+    volumes:
+      - ./flask-app/logs:/fluentd/log   # lasa tos pašus žurnālus
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf
+      - ./fluentd/pos:/fluentd/pos
+    networks:
+      - devops-net
+    depends_on:
+      - kafka
+
+  # -----------------------------------------------------------
+  # 3. ZOOKEEPER — Kafka koordinators
+  #    Kafka bez Zookeeper nedarbojas (pārvalda klasterus)
+  # -----------------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.8
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - devops-net
+
+  # -----------------------------------------------------------
+  # 4. APACHE KAFKA — notikumu straumēšana
+  #    Saņem no Fluentd, nodod Logstash
+  #    Glabā ziņas pat tad, ja patērētājs ir bezsaistē
+  # -----------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.7.8
+    container_name: kafka
+    ports:
+      - "9092:9092"       # ārējā piekļuve (debug rīkiem)
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1   # dev vidē 1 replika pietiek
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - devops-net
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:29092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -----------------------------------------------------------
+  # 5. RABBITMQ — uzdevumu rindas
+  #    Flask sūta uzdevumus (e-pasts, atskaite) — worker apstrādā
+  #    management UI: http://localhost:15672  (guest/guest)
+  # -----------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"       # AMQP protokols (lietotnes)
+      - "15672:15672"     # Web pārvaldības panelis
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - devops-net
+
+  # -----------------------------------------------------------
+  # 6. LOGSTASH — ETL apstrāde
+  #    Kafka → parsē → bagātina → Elasticsearch + ClickHouse
+  # -----------------------------------------------------------
+  logstash:
+    image: logstash:9.3.2
+    container_name: logstash
+    volumes:
+      - ./logstash/pipeline.conf:/usr/share/logstash/pipeline/pipeline.conf
+    environment:
+      LS_JAVA_OPTS: "-Xms512m -Xmx512m"   # atmiņas limits
+      XPACK_MONITORING_ENABLED: "false"
+    mem_limit: 512m 
+    networks:
+      - devops-net
+    depends_on:
+      - kafka
+      - elasticsearch
+
+  # -----------------------------------------------------------
+  # 7. ELASTICSEARCH — žurnālu meklētājdzinnis
+  #    Glabā un indeksē žurnālus — Kibana lasa no šejienes
+  # -----------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.7
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"       # REST API: http://localhost:9200
+    environment:
+      - discovery.type=single-node         # dev režīms (1 mezgls)
+      - xpack.security.enabled=false       # bez SSL lokāli
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g        # 1GB heap katrai pusei
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - devops-net
+
+  # -----------------------------------------------------------
+  # 8. KIBANA — vizualizācija
+  #    Dashboardi, meklēšana, brīdinājumi
+  #    UI: http://localhost:5601
+  # -----------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.2.7
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_SECURITY_ENABLED=false
+      - XPACK_FLEET_ENABLED=false
+    networks:
+      - devops-net
+    depends_on:
+      - elasticsearch
+
+  # -----------------------------------------------------------
+  # 9. CLICKHOUSE — analītiskā datubāze
+  #    Ļoti ātra kolonnu DB — ideāla agregācijām un metrikām
+  #    HTTP interfeiss: http://localhost:8123
+  # -----------------------------------------------------------
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.3
+    container_name: clickhouse
+    ports:
+      - "8123:8123"       # HTTP interfeiss
+      - "9000:9000"       # binārais protokols (klientiem)
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - devops-net
+
+  # -----------------------------------------------------------
+  # 10. MONGODB — dokumentu datubāze
+  #     Glabā lietotāju profilus, sesijas, konfigurācijas
+  #     Elastīga shēma — ideāla mainīgiem datiem
+  # -----------------------------------------------------------
+  mongo:
+    image: mongo:8.0
+    container_name: mongo
+    ports:
+      - "27017:27017"     # Mongo Wire Protocol
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - devops-net
+
+  # -----------------------------------------------------------
+  # 11. PROMETHEUS — metriku vākšana
+  #     Katru 15s nolasa metriku no visiem konteineriem
+  #     http://localhost:9090
+  # -----------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.11.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - devops-net
+
+  # -----------------------------------------------------------
+  # 12. GRAFANA — metriku vizualizācija
+  #     Dashboardi no Prometheus datiem
+  #     UI: http://localhost:3000  (admin/admin)
+  # -----------------------------------------------------------
+  grafana:
+    image: grafana/grafana:13.0.0-24031330776-ubuntu
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - devops-net
+    depends_on:
+      - prometheus
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+
+  # -----------------------------------------------------------
+  # 13. CADVISOR
+  # -----------------------------------------------------------
+  cadvisor:
+    image: google/cadvisor:v0.33.0
+    container_name: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - devops-net
+  
+  # -----------------------------------------------------------
+  # 14. NODE EXPORTER
+  # -----------------------------------------------------------
+  node-exporter:
+    image: prom/node-exporter:v1.11.0
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - devops-net
+  
+  # -----------------------------------------------------------
+  # 15. LOKI
+  #     http://localhost:3100/ready
+  # -----------------------------------------------------------
+  loki:
+    image: grafana/loki:3.6.10
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - devops-net
+
+  # -----------------------------------------------------------
+  # 16. PORTMAIL
+  # -----------------------------------------------------------
+  promtail:
+    image: grafana/promtail:3.6.10
+    container_name: promtail
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./flask-app/logs:/var/log/app
+      - ./promtail/promtail.yml:/etc/promtail/promtail.yml
+      - ./promtail/positions:/tmp
+    networks:
+      - devops-net
+    depends_on:
+      - loki
+  
+  # -----------------------------------------------------------
+  # 17. ELASTICSEARCH EXPORTER
+  # -----------------------------------------------------------
+  elasticsearch-exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter
+    environment:
+      - ES_URI=http://elasticsearch:9200
+    ports:
+      - "9114:9114"
+    networks:
+      - devops-net
+    depends_on:
+      - elasticsearch
+
+  # -----------------------------------------------------------
+  # 18. ELASTICSEARCH EXPORTER
+  # -----------------------------------------------------------
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter
+    command:
+      - --kafka.server=kafka:29092
+    ports:
+      - "9308:9308"
+    networks:
+      - devops-net
+    depends_on:
+      - kafka
+    restart: unless-stopped

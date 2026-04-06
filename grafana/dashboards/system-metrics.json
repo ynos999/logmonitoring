@@ -1,0 +1,33 @@
+{
+  "id": null,
+  "title": "System Metrics",
+  "uid": "system-metrics",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "CPU Usage",
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance)(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 8}
+    },
+    {
+      "type": "graph",
+      "title": "Memory Usage",
+      "targets": [
+        {
+          "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+          "legendFormat": "{{instance}}",
+          "refId": "B"
+        }
+      ],
+      "gridPos": {"x": 0, "y": 8, "w": 24, "h": 8}
+    }
+  ],
+  "schemaVersion": 30,
+  "version": 1
+}
