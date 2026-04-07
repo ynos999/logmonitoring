@@ -6,19 +6,19 @@ docker compose up -d
 ```
 
 ## Web interfeisi
-| Serviss                | URL                                         | Lietotājs/Parole|
-|------------------------|---------------------------------------------|-----------------|
-| Flask                  | http://localhost:5000                       | —               |
-| Kibana                 | http://localhost:5601                       | —               |
-| RabbitMQ UI            | http://localhost:15672                      | guest/guest     |
-| Elasticsearch          | http://localhost:9200                       | —               |
-| ClickHouse             | http://localhost:8123                       | —               |
-| Prometheus             | http://localhost:9090/targets               | —               |
-| Grafana                | http://localhost:3000                       | admin/admin     |
-| Cadvisor               | http://localhost:8080/metrics               | —               |
-| Node-exporter          | http://node-exporter:9100/metrics           | —               |
-| Elasticsearch-exporter | http://elasticsearch-exporter:9114/metrics  | —               |
-| Kafka-exporter         | http://kafka-exporter:9308/metrics          | —               |
+| Serviss                | URL                                     | Lietotājs/Parole|
+|------------------------|-----------------------------------------|-----------------|
+| Flask                  | http://localhost:5000                   | —               |
+| Kibana                 | http://localhost:5601                   | —               |
+| RabbitMQ UI            | http://localhost:15672                  | guest/guest     |
+| Elasticsearch          | http://localhost:9200                   | —               |
+| ClickHouse             | http://localhost:8123                   | —               |
+| Prometheus             | http://localhost:9090/targets           | —               |
+| Grafana                | http://localhost:3000                   | admin/admin     |
+| Cadvisor               | http://localhost:8080/metrics           | —               |
+| Node-exporter          | http://localhost:9100/metrics           | —               |
+| Elasticsearch-exporter | http://localhost:9114/metrics           | —               |
+| Kafka-exporter         | http://localhost:9308/metrics           | —               |
 
 ## Testēšanas maršruti
 - GET /           — mājas lapa
@@ -97,21 +97,16 @@ Lasa no: Prometheus (metrikas), Loki (logi), Elasticsearch (logi)
 **Prometheus** ir metriku datubāze. Ik pēc X sekundēm scrape (nolasa) metriku endpointus un glabā time-series datus. Ir savs query valoda: PromQL
 
 **Cadvisor** ir konteineru metriku avots. Dod datus par Docker konteineriem: CPU, RAM, Network, Disk.
-http://cadvisor:8080/metrics
 
 **Node-exporter** ir servera metriku avots. Dod OS līmeņa metriku: CPU load, RAM, Disk, Network
-http://node-exporter:9100/metrics
 
-**Loki** ir logu datubāze (Grafana logs). Glabā logus (kā Elasticsearch, bet vieglāks)
-Optimizēts tikai logiem un strādā ar Grafana.
+**Loki** ir logu datubāze (Grafana logs). Glabā logus (kā Elasticsearch, bet vieglāks). Optimizēts tikai logiem un strādā ar Grafana.
 
-**Promtail** ir logu savācējs. Nolasa log failus un sūta uz Loki
+**Promtail** ir logu savācējs. Nolasa log failus un sūta uz Loki.
 
 **Elasticsearch-exporter** ir metriku adapteris Elasticsearch. Elasticsearch pats nedod Prometheus formātā metriku. Exporter to pārvērš uz /metrics.
-http://elasticsearch-exporter:9114/metrics
 
 **Kafka-exporter** ir kafka metriku adapteris. Dod info: topic count, consumer lag, broker status.
-http://kafka-exporter:9308/metrics
 
 Visi šie rīki (Elasticsearch, Kibana, Logstash, Fluentd, Apache Kafka, RabbitMQ, ClickHouse, MongoDB) pieder pie modernas backend / datu infrastruktūras.
 
