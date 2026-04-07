@@ -1,0 +1,92 @@
+name: Trivy security Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout kods
+        uses: actions/checkout@v4
+      
+      - name: Uzstādīt Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+        with:
+          cache: true
+
+      - name: Scan Prometheus
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'prom/prometheus:v3.11.0'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          skip-setup-trivy: true  
+
+      - name: Scan Grafana
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'grafana/grafana:13.0.0-24031330776-ubuntu'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          skip-setup-trivy: true  
+
+      - name: Scan Loki
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'grafana/loki:3.6.10'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          skip-setup-trivy: true  
+
+      - name: Scan Node Exporter
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'prom/node-exporter:v1.11.0'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          skip-setup-trivy: true  
+
+      - name: Scan cAdvisor
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'google/cadvisor:v0.33.0'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          skip-setup-trivy: true  
+
+      - name: Scan Promtail
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'grafana/promtail:3.6.10'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          skip-setup-trivy: true
+
+      - name: Scan Kafka
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: 'confluentinc/cp-kafka:7.7.8'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          skip-setup-trivy: true  
+      
+      - name: Scan IaC konfigurācija
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          skip-setup-trivy: true  
