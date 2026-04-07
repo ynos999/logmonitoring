@@ -127,5 +127,6 @@ apps → Kafka / RabbitMQ → processing (Logstash / Fluentd)
 | **Vizualizācija (metrics)**       | Grafana                                                                              |
 | **Koordinācija**                  | ZooKeeper                                                                            |
 | **Monitoring stack**              | Prometheus, Grafana, cAdvisor, Node Exporter, Exporters                              |
+| **Secure**                        | Trivy, SonarQube                                                                     |
 
 Sistēma savāc logus un metriku no aplikācijas un infrastruktūras, transportē tos caur Kafka/RabbitMQ, apstrādā ar Logstash/Fluentd, glabā Elasticsearch, Loki un Prometheus, un vizualizē ar Grafana un Kibana.
