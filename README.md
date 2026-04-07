@@ -78,12 +78,19 @@ Sūti dažus datus kamēr dari — lai grafikos būtu kas redzams:
 **Apache Kafka** ir sistēma, kas paredzēta lielu datu plūsmu (event stream) apstrādei reāllaikā.
 **ZooKeeper** ir “koordinators” vai “tiesnesis”, kas nodrošina, ka visi serveri sadalīti sistēmā un darbojas saskaņoti.
 **Grafana**
+
 **Prometheus**
+
 **Cadvisor**
+
 **Node-exporter**
+
 **Loki**
+
 **Elasticsearch-exporter**
+
 **Kafka-exporter**
+
 **Promtail**
 
 Visi šie rīki (Elasticsearch, Kibana, Logstash, Fluentd, Apache Kafka, RabbitMQ, ClickHouse, MongoDB) pieder pie modernas backend / datu infrastruktūras.
