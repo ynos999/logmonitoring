@@ -114,10 +114,18 @@ apps → Kafka / RabbitMQ → processing (Logstash / Fluentd)
      → storage (ClickHouse / MongoDB / Elasticsearch)
      → visualization (Kibana)
 
+| Loma                              | Rīki                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------ |
+| **Datu savākšana (logs)**         | Fluentd, Logstash, Promtail                                                          |
+| **Datu savākšana (metrics)**      | Prometheus (scrape), cAdvisor, Node Exporter, Elasticsearch-exporter, Kafka-exporter |
+| **Datu transportēšana**           | Apache Kafka, RabbitMQ                                                               |
+| **Datu apstrāde (ETL)**           | Logstash, Fluentd                                                                    |
+| **Datu glabāšana (logs)**         | Elasticsearch, Loki                                                                  |
+| **Datu glabāšana (metrics)**      | Prometheus                                                                           |
+| **Datu glabāšana (biznesa dati)** | MongoDB, ClickHouse                                                                  |
+| **Vizualizācija (logs)**          | Kibana, Grafana                                                                      |
+| **Vizualizācija (metrics)**       | Grafana                                                                              |
+| **Koordinācija**                  | ZooKeeper                                                                            |
+| **Monitoring stack**              | Prometheus, Grafana, cAdvisor, Node Exporter, Exporters                              |
 
-| Loma                | Rīki                                    |
-|---------------------|-----------------------------------------|
-| Datu savākšana      | Fluentd, Logstash                       |
-| Datu transportēšana | Kafka, RabbitMQ                         |
-| Datu glabāšana      | MongoDB, ClickHouse, Elasticsearch      |
-| Vizualizācija       | Kibana                                  |
+Sistēma savāc logus un metriku no aplikācijas un infrastruktūras, transportē tos caur Kafka/RabbitMQ, apstrādā ar Logstash/Fluentd, glabā Elasticsearch, Loki un Prometheus, un vizualizē ar Grafana un Kibana.
