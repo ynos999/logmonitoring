@@ -6,13 +6,15 @@ docker compose up -d
 ```
 
 ## Web interfeisi
-| Serviss       | URL                        | Lietotājs/Parole |
-|---------------|----------------------------|-----------------|
-| Flask lietotne | http://localhost:5000      | —               |
-| Kibana         | http://localhost:5601      | —               |
-| RabbitMQ UI    | http://localhost:15672     | guest/guest     |
-| Elasticsearch  | http://localhost:9200      | —               |
-| ClickHouse     | http://localhost:8123      | —               |
+| Serviss        | URL                          | Lietotājs/Parole|
+|----------------|------------------------------|-----------------|
+| Flask lietotne | http://localhost:5000        | —               |
+| Kibana         | http://localhost:5601        | —               |
+| RabbitMQ UI    | http://localhost:15672       | guest/guest     |
+| Elasticsearch  | http://localhost:9200        | —               |
+| ClickHouse     | http://localhost:8123        | —               |
+| PROMETHEUS     | http://localhost:9090/targets| —               |
+| GRAFANA        | http://localhost:3000        | admin/admin     |
 
 ## Testēšanas maršruti
 - GET /           — mājas lapa
@@ -53,20 +55,40 @@ Kreisā izvēlne → Dashboards → Create dashboard
 5. Saglabā dashboard:
 → Save → nosaukums: "App monitorings"
 Sūti dažus datus kamēr dari — lai grafikos būtu kas redzams:
+→ Invoke-WebRequest -Uri "http://127.0.0.1:5000/load" -UseBasicParsing
+→ Invoke-WebRequest -Uri "http://127.0.0.1:5000/order/keyboard" -UseBasicParsing
+→ Invoke-WebRequest -Uri "http://127.0.0.1:5000/order/monitor" -UseBasicParsing
+→ Invoke-WebRequest -Uri "http://127.0.0.1:5000/order/mouse" -UseBasicParsing
+→ Invoke-WebRequest -Uri "http://127.0.0.1:9200/app-logs-*/_search?q=event_type:purchase&pretty" -UseBasicParsing | Select-Object -ExpandProperty Content
+6. Notestēt vai prometheus redz servisus:
+→ docker exec -it prometheus curl http://prometheus:9090/-/ready
+→ docker exec -it prometheus curl http://cadvisor:8080/metrics
+→ docker exec -it prometheus curl http://kafka-exporter:9308/metrics
+→ docker exec -it prometheus curl http://elasticsearch-exporter:9114/metrics
+→ docker exec -it prometheus curl http://node-exporter:9100/metrics
+###
+## Pskaidrojumi:
+### 
+### Logstash ir rīks, kas paredzēts datu savākšanai, apstrādei un nosūtīšanai uz citām sistēmām (visbiežāk uz Elasticsearch).
+### Fluentd ir atvērtā koda datu (īpaši logu) savācējs un maršrutētājs, kas palīdz apkopot datus no dažādiem avotiem un nosūtīt tos uz citām sistēmām.
+### Elasticsearch ir izkliedēta meklēšanas un analītikas sistēma, kas ļauj ātri meklēt, analizēt un apstrādāt lielus datu apjomus.
+### Kibana ļauj skatīties, analizēt un vizualizēt datus, kas glabājas Elasticsearch.
+### ClickHouse ir ļoti ātra, kolonnveida datubāze, kas paredzēta lielu datu apjomu analīzei reāllaikā (OLAP — Online Analytical Processing).
+### MongoDB ir populāra NoSQL datubāze, kas glabā datus nevis tabulās (kā klasiskās SQL datubāzes), bet gan dokumentos (JSON līdzīgā formātā).
+### RabbitMQ ir ziņojumu starpnieks (message broker) — rīks, kas palīdz dažādām sistēmas daļām savā starpā sazināties, izmantojot ziņojumus (messages).
+### Apache Kafka ir sistēma, kas paredzēta lielu datu plūsmu (event stream) apstrādei reāllaikā.
+### ZooKeeper ir “koordinators” vai “tiesnesis”, kas nodrošina, ka visi serveri sadalīti sistēmā un darbojas saskaņoti.
 
-Invoke-WebRequest -Uri "http://127.0.0.1:5000/load" -UseBasicParsing
-Invoke-WebRequest -Uri "http://127.0.0.1:5000/order/keyboard" -UseBasicParsing
-Invoke-WebRequest -Uri "http://127.0.0.1:5000/order/monitor" -UseBasicParsing
-Invoke-WebRequest -Uri "http://127.0.0.1:5000/order/mouse" -UseBasicParsing
+### Visi šie rīki (Elasticsearch, Kibana, Logstash, Fluentd, Apache Kafka, RabbitMQ, ClickHouse, MongoDB) pieder pie modernas backend / datu infrastruktūras.
 
-Invoke-WebRequest -Uri "http://127.0.0.1:9200/app-logs-*/_search?q=event_type:purchase&pretty" -UseBasicParsing | Select-Object -ExpandProperty Content
+apps → Kafka / RabbitMQ → processing (Logstash / Fluentd)
+     → storage (ClickHouse / MongoDB / Elasticsearch)
+     → visualization (Kibana)
 
-http://localhost:9090/targets
 
-docker exec -it prometheus curl http://prometheus:9090/-/ready
-docker exec -it prometheus curl http://cadvisor:8080/metrics
-docker exec -it prometheus curl http://kafka-exporter:9308/metrics
-docker exec -it prometheus curl http://elasticsearch-exporter:9114/metrics
-docker exec -it prometheus curl http://node-exporter:9100/metrics
-
-Invoke-WebRequest -Uri "http://127.0.0.1:9200/app-logs-*/_search?q=event_type:purchase&pretty" -UseBasicParsing | Select-Object -ExpandProperty Content
+| Loma                | Rīki                                    |
+|---------------------|-----------------------------------------|
+| Datu savākšana      | Fluentd, Logstash                       |
+| Datu transportēšana | Kafka, RabbitMQ                         |
+| Datu glabāšana      | MongoDB, ClickHouse, Elasticsearch      |
+| Vizualizācija       | Kibana                                  |
