@@ -66,20 +66,19 @@ Sūti dažus datus kamēr dari — lai grafikos būtu kas redzams:
 → docker exec -it prometheus curl http://kafka-exporter:9308/metrics
 → docker exec -it prometheus curl http://elasticsearch-exporter:9114/metrics
 → docker exec -it prometheus curl http://node-exporter:9100/metrics
-###
-## Pskaidrojumi:
-### 
-### Logstash ir rīks, kas paredzēts datu savākšanai, apstrādei un nosūtīšanai uz citām sistēmām (visbiežāk uz Elasticsearch).
-### Fluentd ir atvērtā koda datu (īpaši logu) savācējs un maršrutētājs, kas palīdz apkopot datus no dažādiem avotiem un nosūtīt tos uz citām sistēmām.
-### Elasticsearch ir izkliedēta meklēšanas un analītikas sistēma, kas ļauj ātri meklēt, analizēt un apstrādāt lielus datu apjomus.
-### Kibana ļauj skatīties, analizēt un vizualizēt datus, kas glabājas Elasticsearch.
-### ClickHouse ir ļoti ātra, kolonnveida datubāze, kas paredzēta lielu datu apjomu analīzei reāllaikā (OLAP — Online Analytical Processing).
-### MongoDB ir populāra NoSQL datubāze, kas glabā datus nevis tabulās (kā klasiskās SQL datubāzes), bet gan dokumentos (JSON līdzīgā formātā).
-### RabbitMQ ir ziņojumu starpnieks (message broker) — rīks, kas palīdz dažādām sistēmas daļām savā starpā sazināties, izmantojot ziņojumus (messages).
-### Apache Kafka ir sistēma, kas paredzēta lielu datu plūsmu (event stream) apstrādei reāllaikā.
-### ZooKeeper ir “koordinators” vai “tiesnesis”, kas nodrošina, ka visi serveri sadalīti sistēmā un darbojas saskaņoti.
 
-### Visi šie rīki (Elasticsearch, Kibana, Logstash, Fluentd, Apache Kafka, RabbitMQ, ClickHouse, MongoDB) pieder pie modernas backend / datu infrastruktūras.
+## Paskaidrojumi:
+Logstash ir rīks, kas paredzēts datu savākšanai, apstrādei un nosūtīšanai uz citām sistēmām (visbiežāk uz Elasticsearch).
+Fluentd ir atvērtā koda datu (īpaši logu) savācējs un maršrutētājs, kas palīdz apkopot datus no dažādiem avotiem un nosūtīt tos uz citām sistēmām.
+Elasticsearch ir izkliedēta meklēšanas un analītikas sistēma, kas ļauj ātri meklēt, analizēt un apstrādāt lielus datu apjomus.
+Kibana ļauj skatīties, analizēt un vizualizēt datus, kas glabājas Elasticsearch.
+ClickHouse ir ļoti ātra, kolonnveida datubāze, kas paredzēta lielu datu apjomu analīzei reāllaikā (OLAP — Online Analytical Processing).
+MongoDB ir populāra NoSQL datubāze, kas glabā datus nevis tabulās (kā klasiskās SQL datubāzes), bet gan dokumentos (JSON līdzīgā formātā).
+RabbitMQ ir ziņojumu starpnieks (message broker) — rīks, kas palīdz dažādām sistēmas daļām savā starpā sazināties, izmantojot ziņojumus (messages).
+Apache Kafka ir sistēma, kas paredzēta lielu datu plūsmu (event stream) apstrādei reāllaikā.
+ZooKeeper ir “koordinators” vai “tiesnesis”, kas nodrošina, ka visi serveri sadalīti sistēmā un darbojas saskaņoti.
+
+Visi šie rīki (Elasticsearch, Kibana, Logstash, Fluentd, Apache Kafka, RabbitMQ, ClickHouse, MongoDB) pieder pie modernas backend / datu infrastruktūras.
 
 apps → Kafka / RabbitMQ → processing (Logstash / Fluentd)
      → storage (ClickHouse / MongoDB / Elasticsearch)
