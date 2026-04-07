@@ -86,21 +86,37 @@ Sūti dažus datus kamēr dari — lai grafikos būtu kas redzams:
 
 **ZooKeeper** ir “koordinators” vai “tiesnesis”, kas nodrošina, ka visi serveri sadalīti sistēmā un darbojas saskaņoti.
 
-**Grafana**
+**Grafana** ir vizualizācija (UI). Parāda datus dashboardos (grafiki, tabulas).
+Datus neglabā!
+Lasa no: Prometheus (metrikas), Loki (logi), Elasticsearch (logi)
 
-**Prometheus**
+**Prometheus** ir metriku datubāze.
+Ik pēc X sekundēm scrape (nolasa) metriku endpointus un glabā time-series datus.
+Ir savs query valoda: PromQL
 
-**Cadvisor**
+**Cadvisor** ir konteineru metriku avots.
+Dod datus par Docker konteineriem: CPU, RAM, Network, Disk.
+http://cadvisor:8080/metrics
 
-**Node-exporter**
+**Node-exporter** ir servera metriku avots.
+Dod OS līmeņa metriku: CPU load, RAM, Disk, Network
+http://node-exporter:9100/metrics
 
-**Loki**
+**Loki** ir logu datubāze (Grafana logs).
+Glabā logus (kā Elasticsearch, bet vieglāks)
+Optimizēts tikai logiem un strādā ar Grafana.
 
-**Elasticsearch-exporter**
+**Promtail** ir logu savācējs.
+Nolasa log failus un sūta uz Loki
 
-**Kafka-exporter**
+**Elasticsearch-exporter** ir metriku adapteris Elasticsearch.
+Elasticsearch pats nedod Prometheus formātā metriku.
+Exporter to pārvērš uz /metrics.
+http://elasticsearch-exporter:9114/metrics
 
-**Promtail**
+**Kafka-exporter** ir kafka metriku adapteris.
+Dod info: topic count, consumer lag, broker status.
+http://kafka-exporter:9308/metrics
 
 Visi šie rīki (Elasticsearch, Kibana, Logstash, Fluentd, Apache Kafka, RabbitMQ, ClickHouse, MongoDB) pieder pie modernas backend / datu infrastruktūras.
 
