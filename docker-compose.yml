@@ -40,6 +40,7 @@ services:
     depends_on:
       - mongo
       - rabbitmq
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 2. FLUENTD — žurnālu vācējs
@@ -57,6 +58,7 @@ services:
       - devops-net
     depends_on:
       - kafka
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 3. ZOOKEEPER — Kafka koordinators
@@ -70,6 +72,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - devops-net
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 4. APACHE KAFKA — notikumu straumēšana
@@ -100,6 +103,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 5. RABBITMQ — uzdevumu rindas
@@ -119,6 +123,7 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - devops-net
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 6. LOGSTASH — ETL apstrāde
@@ -138,6 +143,7 @@ services:
     depends_on:
       - kafka
       - elasticsearch
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 7. ELASTICSEARCH — žurnālu meklētājdzinnis
@@ -156,6 +162,7 @@ services:
       - es-data:/usr/share/elasticsearch/data
     networks:
       - devops-net
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 8. KIBANA — vizualizācija
@@ -175,6 +182,7 @@ services:
       - devops-net
     depends_on:
       - elasticsearch
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 9. CLICKHOUSE — analītiskā datubāze
@@ -195,6 +203,7 @@ services:
         hard: 262144
     networks:
       - devops-net
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 10. MONGODB — dokumentu datubāze
@@ -210,10 +219,11 @@ services:
       - mongo-data:/data/db
     networks:
       - devops-net
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 11. PROMETHEUS — metriku vākšana
-  #     Katru 15s nolasa metriku no visiem konteineriem
+  #     Katras 15s nolasa metriku no visiem konteineriem
   #     http://localhost:9090
   # -----------------------------------------------------------
   prometheus:
@@ -225,11 +235,12 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - devops-net
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 12. GRAFANA — metriku vizualizācija
   #     Dashboardi no Prometheus datiem
-  #     UI: http://localhost:3000  (admin/admin)
+  #     http://localhost:3000  (admin/admin)
   # -----------------------------------------------------------
   grafana:
     image: grafana/grafana:13.0.0-24031330776-ubuntu
@@ -246,6 +257,7 @@ services:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 13. CADVISOR
@@ -262,6 +274,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
     networks:
       - devops-net
+    restart: unless-stopped
   
   # -----------------------------------------------------------
   # 14. NODE EXPORTER
@@ -273,6 +286,7 @@ services:
       - "9100:9100"
     networks:
       - devops-net
+    restart: unless-stopped
   
   # -----------------------------------------------------------
   # 15. LOKI
@@ -289,6 +303,7 @@ services:
       - "3100:3100"
     networks:
       - devops-net
+    restart: unless-stopped
 
   # -----------------------------------------------------------
   # 16. PORTMAIL
@@ -305,6 +320,7 @@ services:
       - devops-net
     depends_on:
       - loki
+    restart: unless-stopped
   
   # -----------------------------------------------------------
   # 17. ELASTICSEARCH EXPORTER
@@ -319,9 +335,10 @@ services:
       - devops-net
     depends_on:
       - elasticsearch
+    restart: unless-stopped
 
   # -----------------------------------------------------------
-  # 18. ELASTICSEARCH EXPORTER
+  # 18. KAFKA EXPORTER
   # -----------------------------------------------------------
   kafka-exporter:
     image: danielqsj/kafka-exporter
