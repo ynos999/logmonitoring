@@ -9,33 +9,46 @@ permissions:
   contents: read
   security-events: write
 
-
 jobs:
   sast:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run CodeQL
+      - name: Init CodeQL
         uses: github/codeql-action/init@v2
         with:
           languages: python
 
       - name: Analyze
         uses: github/codeql-action/analyze@v2
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
 
   dependency-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: OWASP Dependency Check
+      - name: Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: ${{ github.repository }}
+          path: "."
+          format: "ALL"
+          out: "reports"
+          args: >
+            --failOnCVSS 7
+
+      - name: Upload Dependency Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-check-report
+          path: reports
 
   secrets:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Scan for secrets
+      - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
