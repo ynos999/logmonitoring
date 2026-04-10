@@ -1,4 +1,4 @@
-name: Build
+name: SonarQube Security Scan
 on:
   push:
     branches:
