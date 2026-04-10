@@ -40,10 +40,11 @@ jobs:
             --failOnCVSS 7
 
       - name: Upload Dependency Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: reports
+          if-no-files-found: warn
 
   secrets:
     runs-on: ubuntu-latest
