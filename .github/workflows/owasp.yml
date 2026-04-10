@@ -19,7 +19,7 @@ jobs:
       - name: Run CodeQL
         uses: github/codeql-action/init@v2
         with:
-          languages: javascript
+          languages: python
 
       - name: Analyze
         uses: github/codeql-action/analyze@v2
